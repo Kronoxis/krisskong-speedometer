@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="https://glitch.com/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Hello Node!</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+    <h1>
+        Speedometer
+    </h1>
+    <button id="start">
+        Enable
+    </button>
+    <p id="running">
+        Running!<br />
+        <span id="data"></span>
+    </p>
+
+
+    <script>
+        const button = document.querySelector("#start");
+        button.addEventListener("click", start);
+        const running = document.querySelector("#running");
+        running.style.display = "none";
+        const debug = document.querySelector("#data");
+
+        function start() {
+            button.remove();
+            running.style.display = "";
+            updatePosition();
+        }
+
+        function updatePosition() {
+            console.log("requesting location");
+            navigator.geolocation.watchPosition(onPosition, onError, {
+                enableHighAccuracy: true,
+                timeout: 5000
+            });
+        }
+
+        async function onPosition(pos) {
+            const { latitude, longitude } = pos.coords;
+            console.log(pos.coords);
+            const response = await fetch("/", {
+                method: "POST",
+                body: {
+                    time: Date.now(),
+                    lat: latitude,
+                    lon: longitude
+                }
+            });
+            console.log(await response.json());
+            debug.innerHTML = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        }
+
+        function onError(e) {
+            console.error(e);
+        }
+    </script>
+</body>
+
+</html>
