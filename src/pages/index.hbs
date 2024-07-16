@@ -26,6 +26,11 @@
 
 
     <script>
+        document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "visible") start();
+            else stop();
+        });
+
         let isFake = false;
         const button = document.querySelector("#start");
         button.addEventListener("click", start);
@@ -33,15 +38,28 @@
         running.style.display = "none";
         const data = document.querySelector("#data");
 
+        let watch = null;
+        let fakeWatch = null;
+        start();
         function start() {
-            button.remove();
+            if (watch !== null) stop();
+            button.style.display = "none";
             running.style.display = "";
             updatePosition();
         }
 
+        function stop() {
+            navigator.geolocation.clearWatch(watch);
+            watch = null;
+            button.style.display = "";
+            running.style.display = "none";
+            clearInterval(fakeWatch);
+            fakeWatch = null;
+        }
+
         function updatePosition() {
             console.log("requesting location");
-            navigator.geolocation.watchPosition(onPosition, onError, {
+            watch = navigator.geolocation.watchPosition(onPosition, onError, {
                 enableHighAccuracy: true,
                 timeout: 10000
             });
@@ -50,7 +68,6 @@
         async function onPosition(pos) {
             const { latitude, longitude } = pos.coords;
             const time = Date.now();
-            console.log(pos.coords);
             const response = await fetch("/", {
                 method: "POST",
                 body: JSON.stringify({ time, latitude, longitude })
@@ -60,13 +77,13 @@
                 `Latitude: ${latitude.toFixed(8)}<br/>` +
                 `Longitude: ${longitude.toFixed(8)}<br/>` +
                 `Last updated: ${new Date(time).toLocaleTimeString()}<br/>` +
-                `Speed: ${speed.toFixed(0)} km/h`;
+                `Speed: ${speed.toFixed(2)} km/h`;
         }
 
         function onError(e) {
             if (e.code === GeolocationPositionError.POSITION_UNAVAILABLE) {
                 isFake = true;
-                setInterval(fakePosition, 2000);
+                fakeWatch = setInterval(fakePosition, 2000);
             } else if (!isFake) {
                 console.error(e);
                 running.innerHTML = `Something went wrong! Refresh and try again.<br/>Error code: ${e.code}`;
@@ -76,8 +93,8 @@
         function fakePosition() {
             onPosition({
                 coords: {
-                    latitude: 52 + Math.random() * 0.0003,
-                    longitude: 4 + Math.random() * 0.0003
+                    latitude: 52 + Math.random() * 0.0002,
+                    longitude: 4 + Math.random() * 0.0002
                 }
             });
         }
