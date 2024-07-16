@@ -37,7 +37,14 @@ fastify.post("/", function (request, reply) {
 
     // Reply with speed as JSON
     speed = distance / delta;
-    console.log(time, latitude, longitude, distance, delta, speed);
+    console.log(JSON.stringify({
+        time: new Date(time).toLocaleTimeString(),
+        latitude,
+        longitude,
+        distance: `${distance.toFixed(4)}km`,
+        delta: `${(delta * 3600).toFixed(2)}s`,
+        speed: `${speed.toFixed(2)}km/h`
+    }, undefined, 4));
     return { speed };
 });
 
