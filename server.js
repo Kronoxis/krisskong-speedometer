@@ -25,16 +25,29 @@ fastify.get("/", function (request, reply) {
 
 let speed = 0;
 fastify.post("/", function (request, reply) {
+    // Time, latitude and longitude from device
     const { time, latitude, longitude } = JSON.parse(request.body);
+
+    // Compute distance and time
     const distance = haversine(latitude, longitude);
     const delta = deltaTime(time);
+
+    // If time delta is less than 10 ms, ignore this update
+    if (delta < toHours(10)) return { speed };
+
+    // Reply with speed as JSON
     speed = distance / delta;
     console.log(time, latitude, longitude, distance, delta, speed);
     return { speed };
 });
 
 fastify.get("/speed", function (request, reply) {
+    // Reply with speed as number
     return speed;
+});
+
+fastify.get("/overlay", function (request, reply) {
+    return reply.view("/src/pages/overlay.html");
 });
 
 // Run the server and report out to the logs

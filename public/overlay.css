@@ -1,0 +1,58 @@
+/* a minimalist set of CSS resets */
+
+/* default to border-box */
+html {
+    box-sizing: border-box;
+    font-size: 16px;
+    background-color: #008000;
+    color: #ffffff;
+}
+
+*,
+*:before,
+*:after {
+    box-sizing: inherit;
+}
+
+/* adjust typography defaults */
+body {
+    margin: 1rem;
+    font-family: sans-serif;
+    line-height: 1.5;
+    /* Adjust font-size to modify size of speedometer */
+    font-size: 12px;
+}
+
+#speedometer {
+    position: relative;
+    width: 30em;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#speedometer svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    flex: none;
+}
+
+#speed {
+    text-align: center;
+    font-family: "Sofia Sans Condensed", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 4em;
+    text-shadow: 0 0 0.1em black;
+}
+
+#speed::after {
+    display: block;
+    content: "km/h";
+    font-size: 0.3em;
+    height: 0;
+    transform: translateY(-1em);
+}
