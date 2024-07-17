@@ -6,6 +6,11 @@ const fastify = require("fastify")({
     logger: false,
 });
 
+// Add CORS
+fastify.register(require("@fastify/cors"), {
+    origin: "*"
+});
+
 // Setup our static files
 fastify.register(require("@fastify/static"), {
     root: path.join(__dirname, "public"),
