@@ -1,3 +1,11 @@
+// @TODO Change the URL below to match your Glitch URL
+const url = "ws://localhost:3000";//"wss://krisskong-speedometer.glitch.me";
+
+let websocket = null;
+function connect() {
+    websocket = new WebSocket(url);
+}
+
 // Focus
 document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible") start();
@@ -13,7 +21,7 @@ const info = document.querySelector("#data");
 
 // Hooks
 let watch = null;
-let poller = null;
+let lifeline = null;
 let wake = null;
 let fakeWatch = null;
 
@@ -37,11 +45,18 @@ function start() {
             timeout: 10000
         });
     } else {
-        watch = setInterval(fakePosition, 1000);
+        watch = setInterval(fakePosition, 500);
     }
 
-    // Send the speed to the server repeatedly
-    poller = setInterval(updatePosition, 2000);
+    // Reconnect socket
+    if (!websocket || 
+        websocket.readyState !== WebSocket.CONNECTING ||
+        websocket.readyState !== websocket.OPEN) {
+        connect();
+    }
+
+    // Prevent server from sleeping by pinging it every 5 minutes
+    lifeline = setInterval(keepAlive, 5 * 60_000);
 
     // Prevent device sleep
     navigator.wakeLock.request("screen").then(function (lock) { wake = lock; });
@@ -60,9 +75,9 @@ function stop() {
     }
     watch = null;
 
-    // Stop server updates
-    clearInterval(poller);
-    poller = null;
+    // Let server sleep
+    clearInterval(lifeline);
+    lifeline = null;
 
     // Release wake lock
     if (wake) wake.release();
@@ -70,6 +85,10 @@ function stop() {
     // Show button
     button.style.display = "";
     running.style.display = "none";
+}
+
+function keepAlive() {
+    fetch("/ping");
 }
 
 function updateInfo() {
@@ -81,11 +100,9 @@ function updateInfo() {
 }
 
 async function updatePosition() {
-    // Send speed to server
-    await fetch("/", {
-        method: "POST",
-        body: JSON.stringify({ speed: data.speed })
-    });
+    // Send speed to server websocket
+    if (websocket.readyState !== WebSocket.OPEN) return;
+    websocket.send(JSON.stringify({ speed: data.speed }));
 }
 
 function onPosition(pos) {
@@ -100,6 +117,7 @@ function onPosition(pos) {
     if (delta > toHours(10)) {
         data.speed = distance / delta;
     }
+    updatePosition();
     updateInfo();
 }
 

@@ -28,20 +28,36 @@ fastify.get("/", function (request, reply) {
     return reply.view("/src/pages/index.hbs");
 });
 
+// Speed
 let speed = 0;
-fastify.post("/", function (request, reply) {
-    speed = JSON.parse(request.body).speed;
-    console.log(`${speed.toFixed(2)}km/h`);
-    return reply.code(200).send(speed);
+
+// WebSocket
+const WebSocket = require("ws").WebSocketServer;
+const wss = new WebSocket(fastify);
+const decoder = new TextDecoder();
+wss.on("connection", function connection(ws) {
+    ws.on("error", console.error);
+    ws.on("message", function message(rawData) {
+        const data = JSON.parse(decoder.decode(rawData));
+        speed = data.speed;
+        console.log(`${new Date().toLocaleTimeString()} ${speed.toFixed(2)}km/h`);
+
+        wss.clients.forEach(client => {
+            if (client === ws) return;
+            client.send(JSON.stringify({ speed }));
+        })
+    });
 });
 
-fastify.get("/speed", function (request, reply) {
-    // Reply with speed as number
-    return speed;
-});
-
+// StreamElements Overlay (test)
 fastify.get("/overlay", function (request, reply) {
     return reply.view("/src/pages/overlay.html");
+});
+
+// Lifeline
+fastify.get("/ping", function (request, reply) {
+    console.log("I'm alive");
+    return reply.code(200).send("pong");
 });
 
 // Run the server and report out to the logs

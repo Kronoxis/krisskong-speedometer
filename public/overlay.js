@@ -1,3 +1,12 @@
+// @TODO Change the URL below to match your Glitch URL
+const url = "ws://localhost:3000";//"wss://krisskong-speedometer.glitch.me";
+
+let websocket = null;
+function connect() {
+    websocket = new WebSocket(url);
+}
+connect();
+
 class Speedometer {
     constructor() {
         this.element = document.querySelector("#speedometer");
@@ -7,6 +16,8 @@ class Speedometer {
         this._target = 0;
         this._update = this.update.bind(this);
         this._time = -1;
+
+        this.update();
     }
 
     get speed() { return this._speed; }
@@ -26,17 +37,9 @@ class Speedometer {
 }
 
 const speedometer = new Speedometer();
-setInterval(updateSpeed, 2000);
-speedometer.update();
 
-async function updateSpeed() {
-    const speed = await getSpeed();
+websocket.onmessage = function (event) {
+    const { data } = event;
+    const { speed } = JSON.parse(data);
     speedometer.speed = Math.min(speed, Math.max(speed, 0), 260);
-}
-
-async function getSpeed() {
-    const endpoint = "http://localhost:3000/speed";//"https://krisskong-speedometer.glitch.me/speed";
-    const response = await fetch(endpoint, { method: "GET" });
-    const speed = await response.text();
-    return parseFloat(speed);
 }
