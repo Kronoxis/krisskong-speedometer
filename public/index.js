@@ -1,30 +1,46 @@
+// Focus
 document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible") start();
     else stop();
 });
 
+// UI
 const button = document.querySelector("#start");
 button.addEventListener("click", start);
 const running = document.querySelector("#running");
 running.style.display = "none";
 const info = document.querySelector("#data");
 
-let isFake = false;
+// Hooks
 let watch = null;
 let poller = null;
 let wake = null;
 let fakeWatch = null;
-const data = { latitude: 0, longitude: 0, time: -1, speed: 0, delivered: true, immediate: false };
+
+// Debug
+const params = new URLSearchParams(window.location.search);
+const debug = params.has("debug");
+if (debug) {
+    watch = setInterval(fakePosition, 2000);
+}
+
+// Geolocation logic
+const data = { latitude: 0, longitude: 0, time: -1, speed: 0 };
 start();
 function start() {
     // Stop watching Geolocation if it is already running
     if (watch !== null) stop();
     // Start watching Geolocation
-    watch = navigator.geolocation.watchPosition(onPosition, onError, {
-        enableHighAccuracy: true,
-        timeout: 10000
-    });
-    // Poll the position from the server repeatedly
+    if (!debug) {
+        watch = navigator.geolocation.watchPosition(onPosition, onError, {
+            enableHighAccuracy: true,
+            timeout: 10000
+        });
+    } else {
+        watch = setInterval(fakePosition, 1000);
+    }
+
+    // Send the speed to the server repeatedly
     poller = setInterval(updatePosition, 2000);
 
     // Prevent device sleep
@@ -37,14 +53,14 @@ function start() {
 
 function stop() {
     // Stop watching Geolocation
-    navigator.geolocation.clearWatch(watch);
+    if (!debug) {
+        navigator.geolocation.clearWatch(watch);
+    } else {
+        clearInterval(watch);
+    }
     watch = null;
 
-    // Stop fake Geolocation data
-    clearInterval(fakeWatch);
-    fakeWatch = null;
-
-    // Stop polling position from server
+    // Stop server updates
     clearInterval(poller);
     poller = null;
 
@@ -65,25 +81,11 @@ function updateInfo() {
 }
 
 async function updatePosition() {
-    // Don't send duplicate packets
-    if (data.delivered) {
-        // Next packet should send immediately
-        data.immediate = true;
-        return;
-    }
-
-    // Prevent packet spam in case fetch fails
-    data.immediate = false;
-
-    // Get speed from server
-    const response = await fetch("/", {
+    // Send speed to server
+    await fetch("/", {
         method: "POST",
-        body: JSON.stringify(data)
+        body: JSON.stringify({ speed: data.speed })
     });
-    const { speed } = await response.json();
-    data.speed = speed;
-    data.delivered = true;
-    updateInfo();
 }
 
 function onPosition(pos) {
@@ -93,21 +95,18 @@ function onPosition(pos) {
     data.latitude = latitude;
     data.longitude = longitude;
     data.time = time;
-    data.delivered = false;
-    if (data.immediate) updatePosition();
-    else updateInfo();
+    const distance = haversine(latitude, longitude);
+    const delta = deltaTime(time);
+    if (delta > toHours(10)) {
+        data.speed = distance / delta;
+    }
+    updateInfo();
 }
 
 function onError(e) {
-    if (e.code === GeolocationPositionError.POSITION_UNAVAILABLE) {
-        // Use fake data if Geolocation is unavailable (for debugging)
-        isFake = true;
-        fakeWatch = setInterval(fakePosition, 2000);
-    } else if (!isFake) {
-        // Handle errors but ignore timeout when using fake data
-        console.error(e);
-        running.innerHTML = `Something went wrong! Refresh and try again.<br/>Error code: ${e.code}`;
-    }
+    // Handle errors
+    console.error(e);
+    running.innerHTML = `Something went wrong! Refresh and try again.<br/>Error code: ${e.code}`;
 }
 
 function fakePosition() {
@@ -118,4 +117,65 @@ function fakePosition() {
             longitude: 4 + Math.random() * 0.0002
         }
     });
+}
+
+const last = {
+    valid: false,
+    latitude: 0,
+    longitude: 0,
+    time: -1
+};
+
+function toRadians(degrees) {
+    return degrees / 180 * Math.PI;
+}
+
+function toHours(milliseconds) {
+    return milliseconds / 3600000;
+}
+
+/**
+ * Haversine Distance Formula between last and current position
+ * @param {number} latitude Latitude in degrees
+ * @param {number} longitude Longitude in degrees
+ * @returns Haversine distance in kilometers
+ */
+function haversine(latitude, longitude) {
+    let distance = 0;
+    if (last.valid) {
+        const R = 6371;
+        const lat1 = toRadians(last.latitude);
+        const lat2 = toRadians(latitude);
+        const lon1 = toRadians(last.longitude);
+        const lon2 = toRadians(longitude);
+        const sdLat = Math.sin((lat2 - lat1) / 2);
+        const sdLon = Math.sin((lon2 - lon1) / 2);
+        const cLat1 = Math.cos(lat1);
+        const cLat2 = Math.cos(lat2);
+        const a = sdLat * sdLat + cLat1 * cLat2 * sdLon * sdLon;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        distance = R * c;
+    }
+
+    last.latitude = latitude;
+    last.longitude = longitude;
+    last.valid = true;
+
+    return distance;
+}
+
+/**
+ * Time between last and current update
+ * @param {number} time Current time
+ * @returns Delta Time in hours
+ */
+function deltaTime(time) {
+    let delta = 0;
+    if (time > 0) {
+        delta = toHours(time - last.time);
+    }
+
+    last.time = time;
+
+    return delta;
 }
