@@ -25,7 +25,7 @@ fastify.register(require("@fastify/view"), {
 });
 
 fastify.get("/", function (request, reply) {
-    return reply.view("/src/pages/index.hbs");
+    return reply.view("/src/pages/index.hbs", { SOCKET: process.env.SOCKET });
 });
 
 // Speed
@@ -51,7 +51,7 @@ wss.on("connection", function connection(ws) {
 
 // StreamElements Overlay (test)
 fastify.get("/overlay", function (request, reply) {
-    return reply.view("/src/pages/overlay.html");
+    return reply.view("/src/pages/overlay.hbs", { SOCKET: process.env.SOCKET });
 });
 
 // Lifeline

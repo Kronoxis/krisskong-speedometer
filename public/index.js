@@ -1,9 +1,14 @@
-// @TODO Change the URL below to match your Glitch URL
-const url = "ws://localhost:3000";//"wss://krisskong-speedometer.glitch.me";
-
 let websocket = null;
 function connect() {
-    websocket = new WebSocket(url);
+    websocket = new WebSocket(window.SOCKET);
+    websocket.addEventListener("error", function () {
+        console.error("WebSocket error: ", error);
+        connect();
+    });
+    websocket.addEventListener("close", function () {
+        if (document.visibilityState !== "visible") return;
+        connect();
+    });
 }
 
 // Focus

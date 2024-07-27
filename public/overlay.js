@@ -1,9 +1,6 @@
-// @TODO Change the URL below to match your Glitch URL
-const url = "ws://localhost:3000";//"wss://krisskong-speedometer.glitch.me";
-
 let websocket = null;
 function connect() {
-    websocket = new WebSocket(url);
+    websocket = new WebSocket(window.SOCKET);
 }
 connect();
 
