@@ -28,6 +28,10 @@ button.addEventListener("click", start);
 const running = document.querySelector("#running");
 running.style.display = "none";
 const info = document.querySelector("#data");
+const privacy = document.querySelector("#privacy");
+privacy.addEventListener("click", () => {
+    privacy.classList.toggle("show");
+});
 
 // Hooks
 let watch = null;
@@ -126,11 +130,13 @@ function websocketState() {
 }
 
 function updateInfo() {
+    const priv = !privacy.classList.contains("show");
+    const privify = (number) => priv ? number.replace(/(\d+).(\d{3})/, "*.*****") : number;
     info.innerHTML =
         `Status: ${websocketState()}<br/>` +
         `Heartbeat: ${heartbeat}<br/>` +
-        `Latitude: ${data.latitude.toFixed(8)}<br/>` +
-        `Longitude: ${data.longitude.toFixed(8)}<br/>` +
+        `Latitude: ${privify(data.latitude.toFixed(8))}<br/>` +
+        `Longitude: ${privify(data.longitude.toFixed(8))}<br/>` +
         `Last updated: ${new Date(data.time).toLocaleTimeString()}<br/>` +
         `Speed: ${data.speed.toFixed(2)} km/h`;
 }
