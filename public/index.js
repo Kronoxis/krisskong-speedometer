@@ -1,11 +1,16 @@
 let websocket = null;
 function connect() {
     websocket = new WebSocket(window.SOCKET);
-    websocket.addEventListener("error", function () {
-        console.error("WebSocket error: ", error);
+    websocket.addEventListener("open", function () {
+        updateInfo();
+    });
+    websocket.addEventListener("error", function (event) {
+        updateInfo();
+        console.error("WebSocket error", event);
         connect();
     });
     websocket.addEventListener("close", function () {
+        updateInfo();
         if (document.visibilityState !== "visible") return;
         connect();
     });
@@ -29,6 +34,8 @@ let watch = null;
 let lifeline = null;
 let wake = null;
 let fakeWatch = null;
+let heartbeat = "";
+keepAlive();
 
 // Debug
 const params = new URLSearchParams(window.location.search);
@@ -54,14 +61,14 @@ function start() {
     }
 
     // Reconnect socket
-    if (!websocket || 
+    if (!websocket ||
         websocket.readyState !== WebSocket.CONNECTING ||
         websocket.readyState !== websocket.OPEN) {
         connect();
     }
 
     // Prevent server from sleeping by pinging it every 5 minutes
-    lifeline = setInterval(keepAlive, 5 * 60_000);
+    lifeline = setInterval(keepAlive, 5 * 60000);
 
     // Prevent device sleep
     navigator.wakeLock.request("screen").then(function (lock) { wake = lock; });
@@ -92,12 +99,36 @@ function stop() {
     running.style.display = "none";
 }
 
-function keepAlive() {
-    fetch("/ping");
+async function keepAlive() {
+    try {
+        const response = await fetch("/ping");
+        const text = await response.text();
+        if (text !== "pong") {
+            console.error("Unexpected heartbeat");
+            heartbeat = `Unstable at ${new Date().toLocaleTimeString()}`;
+            return;
+        }
+        heartbeat = `Healthy at ${new Date().toLocaleTimeString()}`;
+    } catch (ex) {
+        console.error("Heartbeat exception", ex);
+        heartbeat = `Died at ${new Date().toLocaleTimeString()}`;
+    }
+}
+
+function websocketState() {
+    switch (websocket?.readyState) {
+        case WebSocket.OPEN: return "Connected";
+        case WebSocket.CONNECTING: return "Connecting";
+        case WebSocket.CLOSING: return "Closing";
+        case WebSocket.CLOSED: return "Closed";
+        default: return "Unknown";
+    }
 }
 
 function updateInfo() {
     info.innerHTML =
+        `Status: ${websocketState()}<br/>` +
+        `Heartbeat: ${heartbeat}<br/>` +
         `Latitude: ${data.latitude.toFixed(8)}<br/>` +
         `Longitude: ${data.longitude.toFixed(8)}<br/>` +
         `Last updated: ${new Date(data.time).toLocaleTimeString()}<br/>` +

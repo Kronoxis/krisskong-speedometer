@@ -1,9 +1,3 @@
-let websocket = null;
-function connect() {
-    websocket = new WebSocket(window.SOCKET);
-}
-connect();
-
 class Speedometer {
     constructor() {
         this.element = document.querySelector("#speedometer");
@@ -14,6 +8,8 @@ class Speedometer {
         this._update = this.update.bind(this);
         this._time = -1;
 
+        this.error = false;
+
         this.update();
     }
 
@@ -21,7 +17,11 @@ class Speedometer {
     set speed(speed) { this._target = speed; }
 
     update(time) {
-        if (this._time > 0) {
+        if (this.error) {
+            this.display.innerHTML = `ERROR`;
+            this.needle.style.rotate = `-180deg`;
+        }
+        else if (this._time > 0) {
             const deltaTime = (time - this._time) * 0.001;
             const t = Math.min(deltaTime, Math.max(deltaTime, 0.001), 0.2);
             this._speed = this._speed * (1 - t) + this._target * t;
@@ -32,11 +32,32 @@ class Speedometer {
         requestAnimationFrame(this._update);
     }
 }
-
 const speedometer = new Speedometer();
 
-websocket.onmessage = function (event) {
-    const { data } = event;
-    const { speed } = JSON.parse(data);
-    speedometer.speed = Math.min(speed, Math.max(speed, 0), 260);
+let websocket = null;
+function connect() {
+    websocket = new WebSocket(window.SOCKET);
+    websocket.addEventListener("open", function () {
+        updateInfo();
+    });
+    websocket.addEventListener("error", function (event) {
+        updateInfo();
+        console.error("WebSocket error", event);
+        connect();
+    });
+    websocket.addEventListener("close", function () {
+        updateInfo();
+        if (document.visibilityState !== "visible") return;
+        connect();
+    });
+    websocket.addEventListener("message", function (event) {
+        const { data } = event;
+        const { speed } = JSON.parse(data);
+        speedometer.speed = Math.min(speed, Math.max(speed, 0), 260);
+    });
+}
+connect();
+
+function updateInfo() {
+    speedometer.error = !websocket || websocket.readyState !== WebSocket.OPEN;
 }
