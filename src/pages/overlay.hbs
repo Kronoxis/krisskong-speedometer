@@ -10,6 +10,9 @@
 
     <!-- import the webpage's stylesheet -->
     <link rel="stylesheet" href="/overlay.css" />
+
+    <script>window.SOCKET = "{{ SOCKET }}"</script>
+    <script src="/overlay.js"></script>
 </head>
 
 <body class="main-container" style="width: 480px;">
@@ -351,8 +354,6 @@
             </g>
         </svg>
     </div>
-    <script>window.SOCKET = "{{ SOCKET }}"</script>
-    <script src="/overlay.js"></script>
 </body>
 
 </html>
