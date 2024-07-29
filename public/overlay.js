@@ -18,8 +18,8 @@ class Speedometer {
 
     update(time) {
         if (this.error) {
-            this.display.innerHTML = `ERROR`;
-            this.needle.style.rotate = `-180deg`;
+            this.display.innerHTML = `N/A`;
+            this.needle.style.rotate = `-170deg`;
         }
         else if (this._time > 0) {
             const deltaTime = (time - this._time) * 0.001;
