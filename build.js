@@ -11,6 +11,7 @@ async function buildHtml() {
     const input = await fs.readFile(source, { encoding: "utf-8" });
     const output = input.split(/<body.*>/).pop().split(/<\/body>/).shift();
     await fs.writeFile(dest, output);
+    console.log("Build HTML:", dest);
 }
 
 async function buildJs() {
@@ -19,6 +20,7 @@ async function buildJs() {
     const input = await fs.readFile(source, { encoding: "utf-8" });
     const output = input.replace(/window\.SOCKET/g, `"${env.SOCKET}"`);
     await fs.writeFile(dest, output);
+    console.log("Build JS:", dest);
 }
 
 async function buildCss() {
@@ -27,8 +29,15 @@ async function buildCss() {
     const input = await fs.readFile(source, { encoding: "utf-8" });
     const output = input;
     await fs.writeFile(dest, output);
+    console.log("Build CSS:", dest);
 }
 
-buildHtml();
-buildJs();
-buildCss();
+
+async function run() {
+    console.log("Building Overlay...");
+    await buildHtml();
+    await buildJs();
+    await buildCss();
+    console.log("Build complete!");
+}
+run();
