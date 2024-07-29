@@ -5,15 +5,11 @@
 2. Open terminal
 3. Enter the following command
 ```sh
-npm run build
+npm run build && refresh
 ```
-4. Enter the following command 
-```sh
-refresh
-```
-5. Copy `build/overlay.html` into StreamElements Custom Element HTML
-6. Copy `build/overlay.css` into StreamElements Custom Element CSS
-7. Copy `build/overlay.js` into StreamElements Custom Element JS
+4. Copy `build/overlay.html` into StreamElements Custom Element HTML
+5. Copy `build/overlay.css` into StreamElements Custom Element CSS
+6. Copy `build/overlay.js` into StreamElements Custom Element JS
 
 ## Usage
 Open the glitch.me website. 
