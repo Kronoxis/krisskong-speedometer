@@ -31,6 +31,7 @@ const info = document.querySelector("#data");
 const privacy = document.querySelector("#privacy");
 privacy.addEventListener("click", () => {
     privacy.classList.toggle("show");
+    updateInfo();
 });
 
 // Hooks
