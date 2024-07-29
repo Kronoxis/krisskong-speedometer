@@ -2,5 +2,6 @@
 .node-gyp
 node_modules
 *.lock
+package-lock.json
 build
 .env
