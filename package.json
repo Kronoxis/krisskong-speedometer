@@ -4,7 +4,8 @@
     "description": "Speedometer for Kris",
     "main": "server.js",
     "scripts": {
-        "start": "node server.js"
+        "start": "node server.js",
+        "build": "node build.js"
     },
     "dependencies": {
         "@fastify/cors": "^9.0.1",
@@ -26,5 +27,8 @@
     "keywords": [
         "node",
         "glitch"
-    ]
+    ],
+    "devDependencies": {
+        "dotenv": "^16.4.5"
+    }
 }

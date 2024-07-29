@@ -6,6 +6,13 @@
             "request": "launch",
             "command": "set PORT=3000 && yarn run start",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "Build",
+            "request": "launch",
+            "command": "yarn run build",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
